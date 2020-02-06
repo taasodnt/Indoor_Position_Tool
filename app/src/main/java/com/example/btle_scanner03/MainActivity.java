@@ -53,6 +53,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.net.NetworkInterface;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -158,7 +159,7 @@ public class MainActivity extends AppCompatActivity{
         startAndStopBtn = findViewById(R.id.startAndStop);
         deviceListView = findViewById(R.id.list_item);
 
-        myReceiver = new MyReceiver();
+        myReceiver = new MyReceiver(this);
         deviceList = new ArrayList<>();
         arrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,deviceList);
         deviceListView.setAdapter(arrayAdapter);
@@ -309,19 +310,25 @@ public class MainActivity extends AppCompatActivity{
         }).start();
     }
 
-    private class MyReceiver extends BroadcastReceiver {
+    private static class MyReceiver extends BroadcastReceiver {
+        private WeakReference<MainActivity> mainActivityWeakReference;
+        private MainActivity mainActivity ;
+        private MyReceiver(MainActivity myMainActivity){
+            mainActivityWeakReference = new WeakReference<>(myMainActivity);
+            mainActivity = mainActivityWeakReference.get();
+        }
 
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             if(action == BLE_ScanningService.UPDATE_LIST_ACTION){
                 ArrayList<String> arrayList = intent.getStringArrayListExtra(BLE_ScanningService.DEVICE_LIST);
-                deviceList.clear();
-                deviceList.addAll(arrayList);
-                arrayAdapter.notifyDataSetChanged();
+                mainActivity.deviceList.clear();
+                mainActivity.deviceList.addAll(arrayList);
+                mainActivity.arrayAdapter.notifyDataSetChanged();
             }else if (action == BLE_ScanningService.SHOW_RESULT){
                 String result = intent.getStringExtra(BLE_ScanningService.COMPARE_RESULT);
-                resultTV.setText("Result: " + result);
+                mainActivity.resultTV.setText("Result: " + result);
             }
         }
     }

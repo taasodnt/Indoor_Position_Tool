@@ -47,6 +47,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -88,6 +89,8 @@ public class BLE_ScanningService extends Service {
     public static final String DEVICE_LIST = "DEVICE_LIST";
     public static final String COMPARE_RESULT = "COMPARE_RESULT";
     private static final int FOREGROUND_SERVICE_CHANNEL_ID = 1;
+
+    private static int threadCount = 0;
 
     private List<ScanFilter> bleScanFilter;
 
@@ -195,6 +198,8 @@ public class BLE_ScanningService extends Service {
             service.scanHandler.postDelayed(service.stopRunnable,service.scanPeriod);
 //            service.mHandler.postDelayed(service.stopRunnable,service.scanPeriod);
             service.bluetoothLeScanner.startScan(service.bleScanFilter,service.scanSettings,service.bleScanCallback);
+            threadCount = Thread.activeCount();
+            Log.d("Number of thread:",""+threadCount);
             Log.d("leaking test","Runnable OK");
         }
     }
@@ -216,7 +221,6 @@ public class BLE_ScanningService extends Service {
             service.update();
             Log.d("leaking test","StopRunnable OK");
             service.scanHandler.post(service.runnable);
-//            service.mHandler.post(service.runnable);
         }
     }
 
@@ -252,6 +256,7 @@ public class BLE_ScanningService extends Service {
         @Override
         public void handleMessage(@NonNull Message msg) {
             BLE_ScanningService mBLE_Service = weakReference.get();
+            Log.d("echo","get message");
             if(mBLE_Service != null){
                 switch (msg.what){
                     // 顯示網路上抓取的資料
@@ -575,6 +580,7 @@ public class BLE_ScanningService extends Service {
 
     @Override
     public void onDestroy() {
+        Set<Thread> excessThreads = Thread.getAllStackTraces().keySet();
 //        unregisterReceiver(receiver);
 //        bluetoothAdapter.stopLeScan(leScanCallback);
         scanHandler.removeCallbacks(runnable);
@@ -583,12 +589,20 @@ public class BLE_ScanningService extends Service {
         scanHandler = null;
 //        mHandler.removeCallbacksAndMessages(runnable);
 //        mHandler.removeCallbacksAndMessages(stopRunnable);
+        mHandler.removeCallbacksAndMessages(null);
         bluetoothLeScanner.stopScan(bleScanCallback);
         bluetoothLeScanner = null;
         bluetoothAdapter = null;
         clearScanList();
         chronometer.stop();
         Log.d(TAG,"Service is stop");
+
+        threadCount = Thread.activeCount();
+        Log.d("Number of thread:",""+threadCount);
+
+        for(Thread thread:excessThreads){
+            Log.d("Excess Threads",thread.getName());
+        }
 
         super.onDestroy();
     }
@@ -684,7 +698,7 @@ public class BLE_ScanningService extends Service {
 //                }
 //            }
 //        });
-        Thread thread = new Thread(sendingRunnable);
+        Thread thread = new Thread(sendingRunnable,"Sending Thread");
         thread.start();
 //        return thread.getId();
     }
