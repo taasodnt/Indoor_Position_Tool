@@ -217,7 +217,7 @@ public class BLE_ScanningService extends Service {
         public void run() {
             service.bluetoothLeScanner.stopScan(service.bleScanCallback);
             Log.d(TAG,"Stop");
-            service.sendBroadCastToActivity();
+//            service.sendBroadCastToActivity();
             service.update();
             Log.d("leaking test","StopRunnable OK");
             service.scanHandler.post(service.runnable);
@@ -352,12 +352,12 @@ public class BLE_ScanningService extends Service {
         }
     }
 
-    private void sendBroadCastToActivity () {
-        Intent broadCastIntent = new Intent();
-        broadCastIntent.setAction(UPDATE_LIST_ACTION);
-        broadCastIntent.putExtra(DEVICE_LIST,scanList);
-        sendBroadcast(broadCastIntent);
-    }
+//    private void sendBroadCastToActivity () {
+//        Intent broadCastIntent = new Intent();
+//        broadCastIntent.setAction(UPDATE_LIST_ACTION);
+//        broadCastIntent.putExtra(DEVICE_LIST,scanList);
+//        sendBroadcast(broadCastIntent);
+//    }
 
     private void sendResultToActivity(String result) {
         Intent broadCastIntent = new Intent();
@@ -636,7 +636,7 @@ public class BLE_ScanningService extends Service {
 
     private void clearScanList() {
         scanList.clear();
-        sendBroadCastToActivity();
+//        sendBroadCastToActivity();
     }
 
 
