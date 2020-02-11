@@ -171,7 +171,8 @@ public class BLE_ScanningService extends Service {
                         service.meanValueHashMap.clear();
                         try{
                             Thread.sleep(1000);
-                            service.sendPostDataToInternet(service.uriAPI_2,mac);
+                            String compareResult = service.sendPostDataToInternet(service.uriAPI_2,mac);
+                            service.sendResultToActivity(compareResult);
                         }catch (Exception e){
                             e.printStackTrace();
                         }
@@ -360,10 +361,12 @@ public class BLE_ScanningService extends Service {
 //    }
 
     private void sendResultToActivity(String result) {
+        Log.d("broadcast test","sendResultToActicity get called");
+
         Intent broadCastIntent = new Intent();
         broadCastIntent.setAction(SHOW_RESULT);
         broadCastIntent.putExtra(COMPARE_RESULT,result);
-        sendBroadcast(broadCastIntent);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(broadCastIntent);
     }
 
 //    private void showDetail() {
@@ -642,62 +645,6 @@ public class BLE_ScanningService extends Service {
 
 
     private void update(){
-//        Thread thread = new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                if(scanList.size() != 0){
-//                    Log.d("scanListSize",Integer.toString(scanList.size()));
-//                    String result;
-////                transmissionState = true;
-//                    String mac=simpleMacAddress.getMacAddress();
-//                    synchronized (controlScanList) {
-//                        if(isLab){
-//                            for (String data:scanList) {
-//                                String num2= mac+" "+data;
-//                                Log.d("num2:",num2);
-//                                result = sendPostDataToInternet(uriAPI,num2);
-//                                if(result == null) {
-//                                    Log.d("ouo","Result is Null Pointer");
-//                                }else{
-//                                    Log.d("ouo",result);
-//                                }
-//                                mHandler.obtainMessage(REFRESH_DATA, result).sendToTarget();
-//                            }
-//                        }
-//                        if(isCompare){
-//                            Log.d("num3:",String.format("%d",meanValueHashMap.size()));
-//                            for(String mac_address:meanValueHashMap.keySet()) {
-//                                RssiMeanValue rssiMeanValueObject = meanValueHashMap.get(mac_address);
-//                                if(rssiMeanValueObject != null){
-//                                    String meanValue = String.format("%.3f",rssiMeanValueObject.getMeanValueOfRssi());
-//
-//                                    String data = mac + " " +  mac_address + " : " +  meanValue +" " +  SCAN_LABEL +"(Mean value)";
-//                                    Log.d("num3:",data);
-//                                    result = sendPostDataToInternet(uriAPI_2,data);
-//                                    if(result == null) {
-//                                        Log.d("ouo","Result is Null Pointer");
-//                                    }else{
-//                                        Log.d("ouo",result);
-//                                        Log.d("test",data);
-//                                    }
-//                                    mHandler.obtainMessage(REFRESH_DATA, result).sendToTarget();
-//                                }
-//                            }
-//                            sendPostDataToInternet(uriAPI_2,mac + " @");
-//                            SCAN_LABEL++;
-//                            meanValueHashMap.clear();
-//                            try{
-//                                Thread.sleep(1000);
-//                                sendPostDataToInternet(uriAPI_2,mac);
-//                            }catch (Exception e){
-//                                e.printStackTrace();
-//                            }
-//                        }
-//                    }
-//                    scanList.clear();
-//                }
-//            }
-//        });
         Thread thread = new Thread(sendingRunnable,"Sending Thread");
         thread.start();
 //        return thread.getId();

@@ -5,6 +5,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import android.Manifest;
 import android.annotation.TargetApi;
@@ -97,6 +98,8 @@ public class MainActivity extends AppCompatActivity{
 
     private SimpleMacAddress simpleMacAddress;
 
+    private LocalBroadcastManager localBroadcastManager;
+
 //    private Handler mHandler;
 
 
@@ -164,9 +167,10 @@ public class MainActivity extends AppCompatActivity{
         arrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,deviceList);
         deviceListView.setAdapter(arrayAdapter);
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BLE_ScanningService.UPDATE_LIST_ACTION);
         intentFilter.addAction(BLE_ScanningService.SHOW_RESULT);
-        registerReceiver(myReceiver,intentFilter);
+        localBroadcastManager = LocalBroadcastManager.getInstance(this);
+        localBroadcastManager.registerReceiver(myReceiver,intentFilter);
+//        registerReceiver(myReceiver,intentFilter);
 
         simpleMacAddress = new SimpleMacAddress(getApplicationContext());
 
@@ -237,7 +241,7 @@ public class MainActivity extends AppCompatActivity{
 
     @Override
     protected void onDestroy() {
-        unregisterReceiver(myReceiver);
+        localBroadcastManager.unregisterReceiver(myReceiver);
         super.onDestroy();
     }
 
@@ -311,23 +315,19 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private static class MyReceiver extends BroadcastReceiver {
-        private WeakReference<MainActivity> mainActivityWeakReference;
         private MainActivity mainActivity ;
         private MyReceiver(MainActivity myMainActivity){
-            mainActivityWeakReference = new WeakReference<>(myMainActivity);
+            WeakReference<MainActivity> mainActivityWeakReference = new WeakReference<>(myMainActivity);
             mainActivity = mainActivityWeakReference.get();
         }
 
         @Override
         public void onReceive(Context context, Intent intent) {
+            Log.d("onReceive","receive broadcast");
             String action = intent.getAction();
-            if(action == BLE_ScanningService.UPDATE_LIST_ACTION){
-                ArrayList<String> arrayList = intent.getStringArrayListExtra(BLE_ScanningService.DEVICE_LIST);
-                mainActivity.deviceList.clear();
-                mainActivity.deviceList.addAll(arrayList);
-                mainActivity.arrayAdapter.notifyDataSetChanged();
-            }else if (action == BLE_ScanningService.SHOW_RESULT){
+            if (action == BLE_ScanningService.SHOW_RESULT){
                 String result = intent.getStringExtra(BLE_ScanningService.COMPARE_RESULT);
+                Log.d("compare result",result);
                 mainActivity.resultTV.setText("Result: " + result);
             }
         }
