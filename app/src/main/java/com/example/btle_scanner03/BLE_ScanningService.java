@@ -29,6 +29,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.UiThread;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -61,7 +62,7 @@ import org.apache.http.util.EntityUtils;
 
 public class BLE_ScanningService extends Service {
     private String uriAPI = "http://163.18.53.144/F459/PHP/beacon/httpPostTest.php"; //所有訊號的資訊
-    private String uriAPI_2 = "http://163.18.53.144/F459/PHP/beacon_result/httpPost.php"; //只有平均值
+    private String uriAPI_2 = "http://163.18.53.144/F459/PHP/beacon_result/PhonePJ_httpPost.php"; //只有平均值
     private String uriAPI_3 = "http://163.18.53.144/F459/PHP/beacon_result/compare.php";
     private String[] DEVICE_ADDRESSES = {
             "20:91:48:21:79:2C",
@@ -90,7 +91,6 @@ public class BLE_ScanningService extends Service {
     public static final String COMPARE_RESULT = "COMPARE_RESULT";
     private static final int FOREGROUND_SERVICE_CHANNEL_ID = 1;
 
-    private static int threadCount = 0;
 
     private List<ScanFilter> bleScanFilter;
 
@@ -112,78 +112,78 @@ public class BLE_ScanningService extends Service {
 //    private WifiManager wifiManager;
     private ScanSettings scanSettings = generateScanSetting();
     private SimpleMacAddress simpleMacAddress;
-    private WeakHandler mHandler = null;
+//    private WeakHandler mHandler = null;
+    private int threadCount = 0;
+    private ArrayList<android.bluetooth.le.ScanResult> scanResults;
 
 
+//    private static class SendingRunnable implements Runnable {
+//        private final WeakReference<BLE_ScanningService> serviceObject;
+//        private final BLE_ScanningService service;
+//
+//        private SendingRunnable(BLE_ScanningService service){
+//            serviceObject = new WeakReference<>(service);
+//            this.service = serviceObject.get();
+//        }
+//        @Override
+//        public void run() {
+//            if(service.scanList.size() != 0){
+//                Log.d("scanListSize",Integer.toString(service.scanList.size()));
+//                String result;
+//                String mac = service.simpleMacAddress.getMacAddress();
+//                synchronized (service.controlScanList) {
+//                    if(service.isLab){
+//                        for (String data:service.scanList) {
+//                            String num2= mac+" "+data;
+//                            Log.d("num2:",num2);
+//                            result = service.sendPostDataToInternet(service.uriAPI,num2);
+//                            if(result == null) {
+//                                Log.d("ouo","Result is Null Pointer");
+//                            }else{
+//                                Log.d("ouo",result);
+//                            }
+////                            service.mHandler.obtainMessage(REFRESH_DATA, result).sendToTarget();
+//                            service.scanHandler.obtainMessage(REFRESH_DATA,result).sendToTarget();
+//                        }
+//                    }
+//                    if(service.isCompare){
+//                        Log.d("num3:",String.format("%d",service.meanValueHashMap.size()));
+//                        for(String mac_address:service.meanValueHashMap.keySet()) {
+//                            RssiMeanValue rssiMeanValueObject = service.meanValueHashMap.get(mac_address);
+//                            if(rssiMeanValueObject != null){
+//                                String meanValue = String.format("%.3f",rssiMeanValueObject.getMeanValueOfRssi());
+//
+//                                String data = mac + " " +  mac_address + " : " +  meanValue +" " +  SCAN_LABEL +"(Mean value)";
+//                                Log.d("num3:",data);
+//                                result = service.sendPostDataToInternet(service.uriAPI_2,data);
+//                                if(result == null) {
+//                                    Log.d("ouo","Result is Null Pointer");
+//                                }else{
+//                                    Log.d("ouo",result);
+//                                    Log.d("test",data);
+//                                }
+////                                service.mHandler.obtainMessage(REFRESH_DATA, result).sendToTarget();
+//                                service.scanHandler.obtainMessage(REFRESH_DATA,result).sendToTarget();
+//                            }
+//                        }
+//                        service.sendPostDataToInternet(service.uriAPI_2,mac + " @");
+//                        SCAN_LABEL++;
+//                        service.meanValueHashMap.clear();
+//                        try{
+//                            Thread.sleep(1000);
+//                            String compareResult = service.sendPostDataToInternet(service.uriAPI_2,mac);
+//                            service.sendResultToActivity(compareResult);
+//                        }catch (Exception e){
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }
+//                service.scanList.clear();
+//            }
+//        }
+//    }
 
-    private static class SendingRunnable implements Runnable {
-        private final WeakReference<BLE_ScanningService> serviceObject;
-        private final BLE_ScanningService service;
-
-        private SendingRunnable(BLE_ScanningService service){
-            serviceObject = new WeakReference<>(service);
-            this.service = serviceObject.get();
-        }
-        @Override
-        public void run() {
-            if(service.scanList.size() != 0){
-                Log.d("scanListSize",Integer.toString(service.scanList.size()));
-                String result;
-//                transmissionState = true;
-                String mac = service.simpleMacAddress.getMacAddress();
-                synchronized (service.controlScanList) {
-                    if(service.isLab){
-                        for (String data:service.scanList) {
-                            String num2= mac+" "+data;
-                            Log.d("num2:",num2);
-                            result = service.sendPostDataToInternet(service.uriAPI,num2);
-                            if(result == null) {
-                                Log.d("ouo","Result is Null Pointer");
-                            }else{
-                                Log.d("ouo",result);
-                            }
-//                            service.mHandler.obtainMessage(REFRESH_DATA, result).sendToTarget();
-                            service.scanHandler.obtainMessage(REFRESH_DATA,result).sendToTarget();
-                        }
-                    }
-                    if(service.isCompare){
-                        Log.d("num3:",String.format("%d",service.meanValueHashMap.size()));
-                        for(String mac_address:service.meanValueHashMap.keySet()) {
-                            RssiMeanValue rssiMeanValueObject = service.meanValueHashMap.get(mac_address);
-                            if(rssiMeanValueObject != null){
-                                String meanValue = String.format("%.3f",rssiMeanValueObject.getMeanValueOfRssi());
-
-                                String data = mac + " " +  mac_address + " : " +  meanValue +" " +  SCAN_LABEL +"(Mean value)";
-                                Log.d("num3:",data);
-                                result = service.sendPostDataToInternet(service.uriAPI_2,data);
-                                if(result == null) {
-                                    Log.d("ouo","Result is Null Pointer");
-                                }else{
-                                    Log.d("ouo",result);
-                                    Log.d("test",data);
-                                }
-//                                service.mHandler.obtainMessage(REFRESH_DATA, result).sendToTarget();
-                                service.scanHandler.obtainMessage(REFRESH_DATA,result).sendToTarget();
-                            }
-                        }
-                        service.sendPostDataToInternet(service.uriAPI_2,mac + " @");
-                        SCAN_LABEL++;
-                        service.meanValueHashMap.clear();
-                        try{
-                            Thread.sleep(1000);
-                            String compareResult = service.sendPostDataToInternet(service.uriAPI_2,mac);
-                            service.sendResultToActivity(compareResult);
-                        }catch (Exception e){
-                            e.printStackTrace();
-                        }
-                    }
-                }
-                service.scanList.clear();
-            }
-        }
-    }
-
-    private SendingRunnable sendingRunnable = new SendingRunnable(this);
+//    private SendingRunnable sendingRunnable = new SendingRunnable(this);
 
     private static class MyRunnable implements Runnable {
         private final WeakReference<BLE_ScanningService> serviceObject;
@@ -199,8 +199,8 @@ public class BLE_ScanningService extends Service {
             service.scanHandler.postDelayed(service.stopRunnable,service.scanPeriod);
 //            service.mHandler.postDelayed(service.stopRunnable,service.scanPeriod);
             service.bluetoothLeScanner.startScan(service.bleScanFilter,service.scanSettings,service.bleScanCallback);
-            threadCount = Thread.activeCount();
-            Log.d("Number of thread:",""+threadCount);
+            service.threadCount = Thread.activeCount();
+            Log.d("Number of thread:",""+service.threadCount);
             Log.d("leaking test","Runnable OK");
         }
     }
@@ -218,97 +218,43 @@ public class BLE_ScanningService extends Service {
         public void run() {
             service.bluetoothLeScanner.stopScan(service.bleScanCallback);
             Log.d(TAG,"Stop");
-//            service.sendBroadCastToActivity();
+            service.handleScanResults();
             service.update();
             Log.d("leaking test","StopRunnable OK");
-            service.scanHandler.post(service.runnable);
+            if(service.scanHandler != null) {
+                service.scanHandler.post(service.runnable);
+            }
         }
     }
 
     private final MyRunnable runnable = new MyRunnable(this);
     private final MyStopRunnable stopRunnable = new MyStopRunnable(this);
 
-//    private final Runnable stopRunnable = new Runnable() {
-//        @Override
-//        public void run() {
-//            bluetoothLeScanner.stopScan(bleScanCallback);
-//            Log.d(TAG,"Stop");
-//            sendBroadCastToActivity();
-//            update();
-//            scanHandler.post(runnable);
-//        }
-//    };
-//    private final Runnable runnable = new Runnable() {
-//        @Override
-//        public void run() {
-//            scanHandler.postDelayed(stopRunnable,scanPeriod);
-//            bluetoothLeScanner.startScan(bleScanFilter,scanSettings,bleScanCallback);
-//        }
-//    };
     private HandlerThread handlerThread = new HandlerThread("Scan HandlerThread");
 
-    private static class WeakHandler extends Handler {
-        private final WeakReference<BLE_ScanningService> weakReference;
 
-        private WeakHandler(BLE_ScanningService service) {
-            weakReference = new WeakReference<>(service);
-        }
+    private void handleScanResults(){
+        for(android.bluetooth.le.ScanResult result : scanResults){
+            int rssi = result.getRssi();
+            String mac_address = result.getDevice().getAddress();
+            String data = mac_address + " " + rssi + " " +chronometer.getElapsedTime();
 
-        @Override
-        public void handleMessage(@NonNull Message msg) {
-            BLE_ScanningService mBLE_Service = weakReference.get();
-            Log.d("echo","get message");
-            if(mBLE_Service != null){
-                switch (msg.what){
-                    // 顯示網路上抓取的資料
-                    case REFRESH_DATA:
-                        String result = null;
-                        if (msg.obj instanceof String)
-                            result = (String) msg.obj;
-                        if(result != null && result != "") {
-//                        Toast.makeText(BLE_ScanningService.this,"資料庫連接失敗\n請檢查您的連線狀態",Toast.LENGTH_SHORT).show();
-                            Log.d("echo", "result != null");
-                            Log.d("echo", result);
-                            Toast.makeText(mBLE_Service, result, Toast.LENGTH_SHORT).show();
-                        }
-                        break;
-                    default:
-                        break;
+ //           synchronized (controlScanList) {
+                scanList.add(data);
+                if(meanValueHashMap.containsKey(mac_address)) {
+                    RssiMeanValue rssiMeanValue = meanValueHashMap.get(mac_address);
+                    if(rssiMeanValue != null){
+                        rssiMeanValue.add(rssi);
+                    }
+                }else{
+                    RssiMeanValue rssiMeanValueObject = new RssiMeanValue(mac_address,rssi);
+                    meanValueHashMap.put(rssiMeanValueObject.getMac_address(),rssiMeanValueObject);
                 }
-            }
-        }
-    }
-
-
-//    private Handler initialHandler() {
-//        Handler mHandler = new Handler(getApplicationContext().getMainLooper()) {
-//            @Override
-//            public void handleMessage(Message msg) {
-//                switch (msg.what){
-//                    // 顯示網路上抓取的資料
-//                    case REFRESH_DATA:
-//                        String result = null;
-//                        if (msg.obj instanceof String)
-//                            result = (String) msg.obj;
-//                        if(result!=null) {
-////                        Toast.makeText(BLE_ScanningService.this,"資料庫連接失敗\n請檢查您的連線狀態",Toast.LENGTH_SHORT).show();
-//                            Log.d("echo", "result != null");
-//                            Log.d("echo", result);
-//                        Toast.makeText(BLE_ScanningService.this, result, Toast.LENGTH_SHORT).show();
-////                            sendResultToActivity(result);
-//                        }
-//                        break;
-//                    default:
-//                        break;
-//                }
+                Log.d("ouo","Added message" + data);
 //            }
-//        };
-//        return mHandler;
-//    }
-
-
-
-//    private HashMap<String,BLE_Device> meanValueHashMap;
+        }
+        scanResults.clear();
+    }
 
 
 //    private BluetoothAdapter.LeScanCallback leScanCallback = new BluetoothAdapter.LeScanCallback() {
@@ -424,26 +370,27 @@ public class BLE_ScanningService extends Service {
         @Override
         public void onScanResult(int callbackType, android.bluetooth.le.ScanResult result) {
             super.onScanResult(callbackType, result);
-//                    Calendar calendar = Calendar.getInstance();
-//                    SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
-//                    String data = result.getDevice().getAddress() + " " + result.getRssi()+ " " +dateFormat.format(calendar.getTime());
-            int rssi = result.getRssi();
-            String mac_address = result.getDevice().getAddress();
-            String data = mac_address + " " + rssi + " " +service.chronometer.getElapsedTime();
 
-            synchronized (service.controlScanList) {
-                service.scanList.add(data);
-                if(service.meanValueHashMap.containsKey(mac_address)) {
-                    RssiMeanValue rssiMeanValue = service.meanValueHashMap.get(mac_address);
-                    if(rssiMeanValue != null){
-                        rssiMeanValue.add(rssi);
-                    }
-                }else{
-                    RssiMeanValue rssiMeanValueObject = new RssiMeanValue(mac_address,rssi);
-                    service.meanValueHashMap.put(rssiMeanValueObject.getMac_address(),rssiMeanValueObject);
-                }
-                Log.d(TAG,"Added message" + data);
+            synchronized (service.controlScanList){
+                service.scanResults.add(result);
             }
+//            int rssi = result.getRssi();
+//            String mac_address = result.getDevice().getAddress();
+//            String data = mac_address + " " + rssi + " " +service.chronometer.getElapsedTime();
+//
+//            synchronized (service.controlScanList) {
+//                service.scanList.add(data);
+//                if(service.meanValueHashMap.containsKey(mac_address)) {
+//                    RssiMeanValue rssiMeanValue = service.meanValueHashMap.get(mac_address);
+//                    if(rssiMeanValue != null){
+//                        rssiMeanValue.add(rssi);
+//                    }
+//                }else{
+//                    RssiMeanValue rssiMeanValueObject = new RssiMeanValue(mac_address,rssi);
+//                    service.meanValueHashMap.put(rssiMeanValueObject.getMac_address(),rssiMeanValueObject);
+//                }
+//                Log.d(TAG,"Added message" + data);
+//            }
         }
 
         @Override
@@ -554,7 +501,9 @@ public class BLE_ScanningService extends Service {
 
         simpleMacAddress = new SimpleMacAddress(getApplicationContext());
 
-        mHandler = new WeakHandler(this);
+//        mHandler = new WeakHandler(this);
+
+        scanResults = new ArrayList<>();
 
 
         Log.d(TAG,"Service on create");
@@ -583,7 +532,7 @@ public class BLE_ScanningService extends Service {
 
     @Override
     public void onDestroy() {
-        Set<Thread> excessThreads = Thread.getAllStackTraces().keySet();
+
 //        unregisterReceiver(receiver);
 //        bluetoothAdapter.stopLeScan(leScanCallback);
         scanHandler.removeCallbacks(runnable);
@@ -592,7 +541,7 @@ public class BLE_ScanningService extends Service {
         scanHandler = null;
 //        mHandler.removeCallbacksAndMessages(runnable);
 //        mHandler.removeCallbacksAndMessages(stopRunnable);
-        mHandler.removeCallbacksAndMessages(null);
+//        mHandler.removeCallbacksAndMessages(null);
         bluetoothLeScanner.stopScan(bleScanCallback);
         bluetoothLeScanner = null;
         bluetoothAdapter = null;
@@ -600,12 +549,10 @@ public class BLE_ScanningService extends Service {
         chronometer.stop();
         Log.d(TAG,"Service is stop");
 
-        threadCount = Thread.activeCount();
-        Log.d("Number of thread:",""+threadCount);
 
-        for(Thread thread:excessThreads){
-            Log.d("Excess Threads",thread.getName());
-        }
+
+
+
 
         super.onDestroy();
     }
@@ -645,10 +592,65 @@ public class BLE_ScanningService extends Service {
 
 
     private void update(){
-        Thread thread = new Thread(sendingRunnable,"Sending Thread");
-        thread.start();
+//        long sendThreadID;
+//        long uiThreadID;
+//        Thread thread = new Thread(sendingRunnable,"Sending Thread");
+//        thread.start();
+//        sendThreadID = thread.getId();
+//        uiThreadID = Thread.currentThread().getId();
+//        Log.d("thread id","Sending thread ID = "+sendThreadID);
+//        Log.d("thread id","Main thread ID = " + uiThreadID);
 //        return thread.getId();
+
+
+        String result;
+        String mac = simpleMacAddress.getMacAddress();
+        if(isLab){
+            for (String data:scanList) {
+                String num2= mac+" "+data;
+                Log.d("num2:",num2);
+                result = sendPostDataToInternet(uriAPI,num2);
+                if(result == null) {
+                    Log.d("ouo","Result is Null Pointer");
+                }else{
+                    Log.d("ouo",result);
+                }
+//                            service.mHandler.obtainMessage(REFRESH_DATA, result).sendToTarget();
+                scanHandler.obtainMessage(REFRESH_DATA,result).sendToTarget();
+            }
+        }
+        if(isCompare){
+            Log.d("num3:",String.format("%d",meanValueHashMap.size()));
+            for(String mac_address:meanValueHashMap.keySet()) {
+                RssiMeanValue rssiMeanValueObject = meanValueHashMap.get(mac_address);
+                if(rssiMeanValueObject != null){
+                    String meanValue = String.format("%.3f",rssiMeanValueObject.getMeanValueOfRssi());
+                    String data = mac + " " +  mac_address + " : " +  meanValue +" " +  SCAN_LABEL +"(Mean value)";
+                    result = sendPostDataToInternet(uriAPI_2,data);
+                    if(result == null) {
+                        Log.d("ouo","Result is Null Pointer");
+                    }else{
+                        Log.d("ouo",result);
+                        Log.d("test",data);
+                    }
+//                                service.mHandler.obtainMessage(REFRESH_DATA, result).sendToTarget();
+                }
+            }
+            sendPostDataToInternet(uriAPI_2,mac + " @");
+            SCAN_LABEL++;
+            meanValueHashMap.clear();
+            try{
+                Thread.sleep(1000);
+                String compareResult = sendPostDataToInternet(uriAPI_2,mac);
+                sendResultToActivity(compareResult);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+        scanList.clear();
     }
+
+
 
 
     private String sendPostDataToInternet(String uri,String strTxt) {

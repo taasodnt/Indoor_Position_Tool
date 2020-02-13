@@ -60,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import static com.example.btle_scanner03.BLE_ScanningService.SERVICE_STATE_ON;
 
@@ -73,7 +74,7 @@ public class MainActivity extends AppCompatActivity{
     private static final String SERVICE_STATE = "SERVICE_STATE";
     public static final String SCAN_INTERVAL_ID = "SCAN_INTERVAL";
     public static final String SCAN_OPTION = "SCAN_OPTION";
-    private String uriAPI_4 = "http://163.18.53.144/F459/PHP/beacon_result/result_save.php";
+    private String uriAPI_4 = "http://163.18.53.144/F459/PHP/beacon_result/PhonePJ_resultSave.php";
 
     private boolean serviceState;
     private Intent serviceIntent;
@@ -100,6 +101,8 @@ public class MainActivity extends AppCompatActivity{
 
     private LocalBroadcastManager localBroadcastManager;
 
+    private int threadCount = 0;
+    Set<Thread> excessThreads = null;
 //    private Handler mHandler;
 
 
@@ -256,13 +259,18 @@ public class MainActivity extends AppCompatActivity{
                 scanInterval = Long.parseLong(scanIntervalET.getText().toString());
             }
             serviceIntent.putExtra(MainActivity.SCAN_OPTION,options);
-
             serviceIntent.putExtra(SCAN_INTERVAL_ID,scanInterval);
             startService(serviceIntent);
 
         }else{
             BLE_ScanningService.SERVICE_STATE_ON = false;
             stopService(serviceIntent);
+            threadCount = Thread.activeCount();
+            Log.d("Number of thread:",""+threadCount);
+            excessThreads = Thread.getAllStackTraces().keySet();
+            for(Thread thread:excessThreads){
+                Log.d("Excess Threads",thread.getName());
+            }
         }
     }
 

@@ -24,7 +24,7 @@ public class RssiMeanValue {
 
     public double getMeanValueOfRssi() {
         double meanValue = rssi/numberOfData;
-        Log.d(RssiMeanValue.class.getSimpleName(),"rssi: "+rssi+"  numberOfData: "+numberOfData+"  meanValue: "+meanValue);
+        Log.d("ouo","rssi: "+rssi+"  numberOfData: "+numberOfData+"  meanValue: "+meanValue);
         return meanValue;
     }
 }
