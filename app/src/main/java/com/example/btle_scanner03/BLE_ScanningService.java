@@ -64,20 +64,19 @@ public class BLE_ScanningService extends Service {
     private String uriAPI = "http://163.18.53.144/F459/PHP/beacon/httpPostTest.php"; //所有訊號的資訊
     private String uriAPI_2 = "http://163.18.53.144/F459/PHP/beacon_result/PhonePJ_httpPost.php"; //只有平均值
     private String uriAPI_3 = "http://163.18.53.144/F459/PHP/beacon_result/compare.php";
-    private String[] DEVICE_ADDRESSES = {
-            "20:91:48:21:79:2C",
-            "20:91:48:21:7E:65",
-            "20:91:48:21:7E:57",
-            "20:91:48:21:92:0E",
-            "20:91:48:21:88:84",
-            "20:91:48:21:47:66",
-            "FF:FF:00:06:A1:BB",
-            "FF:FF:00:04:EA:15",
-            "FF:FF:00:05:8A:AD"};
+//    private String[] DEVICE_ADDRESSES = {
+//            "20:91:48:21:79:2C",
+//            "20:91:48:21:7E:65",
+//            "20:91:48:21:7E:57",
+//            "20:91:48:21:92:0E",
+//            "20:91:48:21:88:84",
+//            "20:91:48:21:47:66",
+//            "FF:FF:00:06:A1:BB",
+//            "FF:FF:00:04:EA:15",
+//            "FF:FF:00:05:8A:AD"};
+    private String[] deviceaddress;
 //    public static final String SCAN_DATA = "SCAN_DATA";
     private static int SCAN_LABEL = 1;
-//    private static final String START_SCANCALLBACK = "START_SCAN";
-//    private static final String STOP_SCANCALLBACK = "STOP_SCAN";
     public static final long SCAN_PERIOD = 10000;
     protected static final int REFRESH_DATA = 0x00000001;
 //    public static final String ACTION_START_FOREGROUND_SERVICE = "ACTION_START_FOREGROUND_SERVICE";
@@ -294,7 +293,7 @@ public class BLE_ScanningService extends Service {
 
     private void setBleScanFilter() {
         bleScanFilter = new ArrayList<>();
-        for(String macAddress:DEVICE_ADDRESSES){
+        for(String macAddress:deviceaddress){
             bleScanFilter.add(new ScanFilter.Builder().setDeviceAddress(macAddress).build());
         }
     }
@@ -462,8 +461,6 @@ public class BLE_ScanningService extends Service {
 //            Log.d(TAG,"Output Error!");
 //            e.printStackTrace();
 //        }
-        setBleScanFilter();
-
 //        IntentFilter scanWifiFilter = new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
 //        receiver = new BroadcastReceiver() {
 //            @Override
@@ -521,8 +518,9 @@ public class BLE_ScanningService extends Service {
                     isCompare = tmpList[1];
                 }
                 scanPeriod = intent.getLongExtra(MainActivity.SCAN_INTERVAL_ID,SCAN_PERIOD);
+                deviceaddress = intent.getStringArrayExtra(MainActivity.BEACON_LIST);
+                setBleScanFilter();
                 scanHandler.post(runnable);
-//                mHandler.post(runnable);
             }else{
                 Log.d("Service State","Service start failed");
             }
@@ -548,12 +546,6 @@ public class BLE_ScanningService extends Service {
         clearScanList();
         chronometer.stop();
         Log.d(TAG,"Service is stop");
-
-
-
-
-
-
         super.onDestroy();
     }
 
@@ -561,8 +553,7 @@ public class BLE_ScanningService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
-
-
+    
     private void startForegroundService() {
         Intent intent = new Intent(this,MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this,0,intent,0);

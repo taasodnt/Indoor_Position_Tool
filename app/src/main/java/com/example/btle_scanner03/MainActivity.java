@@ -1,45 +1,35 @@
 package com.example.btle_scanner03;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
-import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Message;
 import android.provider.Settings;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.Chronometer;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
@@ -50,19 +40,10 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.net.NetworkInterface;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
-
-import static com.example.btle_scanner03.BLE_ScanningService.SERVICE_STATE_ON;
 
 public class MainActivity extends AppCompatActivity{
 
@@ -74,8 +55,9 @@ public class MainActivity extends AppCompatActivity{
     private static final String SERVICE_STATE = "SERVICE_STATE";
     public static final String SCAN_INTERVAL_ID = "SCAN_INTERVAL";
     public static final String SCAN_OPTION = "SCAN_OPTION";
+    public static final String BEACON_LIST = "BEACON_LIST";
     private String uriAPI_4 = "http://163.18.53.144/F459/PHP/beacon_result/PhonePJ_resultSave.php";
-
+    private String beaconListAPI = "http://163.18.53.144/F459/php/beacon_result/PhonePJ_beaconList.php";
     private boolean serviceState;
     private Intent serviceIntent;
     private MyReceiver myReceiver;
@@ -101,10 +83,40 @@ public class MainActivity extends AppCompatActivity{
 
     private LocalBroadcastManager localBroadcastManager;
 
+    private String[] deviceAddresses;
+
     private int threadCount = 0;
     Set<Thread> excessThreads = null;
 //    private Handler mHandler;
 
+    private static class GetBeaconListRunnable implements Runnable {
+        MainActivity activity;
+
+        private GetBeaconListRunnable(MainActivity activity){
+            WeakReference<MainActivity> activityWeakReference = new WeakReference<>(activity);
+            this.activity = activityWeakReference.get();
+        }
+        @Override
+        public void run() {
+            try{
+                final String tmp = activity.sendPostDataToInternet(activity.beaconListAPI,"");
+                activity.deviceAddresses = tmp.split(",");
+                Log.d("get beacon list","get beacon list success");
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if(tmp != null){
+                            activity.startAndStopBtn.setEnabled(true);
+                        }else{
+                            Toast.makeText(activity, "Service no response!", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -163,6 +175,7 @@ public class MainActivity extends AppCompatActivity{
 
         serviceState = false;
         startAndStopBtn = findViewById(R.id.startAndStop);
+        startAndStopBtn.setEnabled(false);
         deviceListView = findViewById(R.id.list_item);
 
         myReceiver = new MyReceiver(this);
@@ -176,6 +189,8 @@ public class MainActivity extends AppCompatActivity{
 //        registerReceiver(myReceiver,intentFilter);
 
         simpleMacAddress = new SimpleMacAddress(getApplicationContext());
+
+        new Thread(new GetBeaconListRunnable(this)).start();
 
 //        mHandler = initialHandler();
     }
@@ -258,8 +273,9 @@ public class MainActivity extends AppCompatActivity{
             if(!scanIntervalET.getText().toString().isEmpty()){
                 scanInterval = Long.parseLong(scanIntervalET.getText().toString());
             }
-            serviceIntent.putExtra(MainActivity.SCAN_OPTION,options);
+            serviceIntent.putExtra(SCAN_OPTION,options);
             serviceIntent.putExtra(SCAN_INTERVAL_ID,scanInterval);
+            serviceIntent.putExtra(BEACON_LIST, deviceAddresses);
             startService(serviceIntent);
 
         }else{
