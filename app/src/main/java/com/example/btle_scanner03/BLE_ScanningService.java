@@ -55,14 +55,16 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONObject;
 
 public class BLE_ScanningService extends Service {
     private String uriAPI = "http://163.18.53.144/F459/PHP/beacon/httpPostTest.php"; //所有訊號的資訊
-    private String uriAPI_2 = "http://163.18.53.144/F459/PHP/beacon_result/PhonePJ_httpPost.php"; //只有平均值
+    private String uriAPI_2 = "http://163.18.53.144/F459/PHP/beacon_result/PhonePJ_getJson.php"; //只有平均值
     private String uriAPI_3 = "http://163.18.53.144/F459/PHP/beacon_result/compare.php";
 //    private String[] DEVICE_ADDRESSES = {
 //            "20:91:48:21:79:2C",
@@ -90,7 +92,6 @@ public class BLE_ScanningService extends Service {
     public static final String COMPARE_RESULT = "COMPARE_RESULT";
     private static final int FOREGROUND_SERVICE_CHANNEL_ID = 1;
 
-
     private List<ScanFilter> bleScanFilter;
 
 //    private HashMap<String,BLE_Device> ble_deviceHashMap;
@@ -116,73 +117,71 @@ public class BLE_ScanningService extends Service {
     private ArrayList<android.bluetooth.le.ScanResult> scanResults;
 
 
-//    private static class SendingRunnable implements Runnable {
-//        private final WeakReference<BLE_ScanningService> serviceObject;
-//        private final BLE_ScanningService service;
-//
-//        private SendingRunnable(BLE_ScanningService service){
-//            serviceObject = new WeakReference<>(service);
-//            this.service = serviceObject.get();
-//        }
-//        @Override
-//        public void run() {
-//            if(service.scanList.size() != 0){
-//                Log.d("scanListSize",Integer.toString(service.scanList.size()));
-//                String result;
-//                String mac = service.simpleMacAddress.getMacAddress();
-//                synchronized (service.controlScanList) {
-//                    if(service.isLab){
-//                        for (String data:service.scanList) {
-//                            String num2= mac+" "+data;
-//                            Log.d("num2:",num2);
-//                            result = service.sendPostDataToInternet(service.uriAPI,num2);
-//                            if(result == null) {
-//                                Log.d("ouo","Result is Null Pointer");
-//                            }else{
-//                                Log.d("ouo",result);
-//                            }
-////                            service.mHandler.obtainMessage(REFRESH_DATA, result).sendToTarget();
-//                            service.scanHandler.obtainMessage(REFRESH_DATA,result).sendToTarget();
-//                        }
-//                    }
-//                    if(service.isCompare){
-//                        Log.d("num3:",String.format("%d",service.meanValueHashMap.size()));
-//                        for(String mac_address:service.meanValueHashMap.keySet()) {
-//                            RssiMeanValue rssiMeanValueObject = service.meanValueHashMap.get(mac_address);
-//                            if(rssiMeanValueObject != null){
-//                                String meanValue = String.format("%.3f",rssiMeanValueObject.getMeanValueOfRssi());
-//
+    private static class SendingRunnable implements Runnable {
+        private final WeakReference<BLE_ScanningService> serviceObject;
+        private final BLE_ScanningService service;
+
+        private SendingRunnable(BLE_ScanningService service){
+            serviceObject = new WeakReference<>(service);
+            this.service = serviceObject.get();
+        }
+        @Override
+        public void run() {
+            if(service.scanList.size() != 0){
+                Log.d("scanListSize",Integer.toString(service.scanList.size()));
+                String result;
+                String mac = service.simpleMacAddress.getMacAddress();
+                synchronized (service.controlScanList) {
+                    if(service.isLab){
+                        for (String data:service.scanList) {
+                            String num2= mac+" "+data;
+                            Log.d("num2:",num2);
+                            result = service.sendPostDataToInternet(service.uriAPI,num2);
+                            if(result == null) {
+                                Log.d("ouo","Result is Null Pointer");
+                            }else{
+                                Log.d("ouo",result);
+                            }
+                        }
+                    }
+                    if(service.isCompare){
+                        String data = "[";
+                        Log.d("num3",String.format("%d",service.meanValueHashMap.size()));
+                        for(String mac_address:service.meanValueHashMap.keySet()) {
+                            RssiMeanValue rssiMeanValueObject = service.meanValueHashMap.get(mac_address);
+                            if(rssiMeanValueObject != null){
+                                String meanValue = String.format("%.3f",rssiMeanValueObject.getMeanValueOfRssi());
+
 //                                String data = mac + " " +  mac_address + " : " +  meanValue +" " +  SCAN_LABEL +"(Mean value)";
-//                                Log.d("num3:",data);
-//                                result = service.sendPostDataToInternet(service.uriAPI_2,data);
+                                data = data + "{\"PhoneMac\":"+"\""+mac+"\","+"\"BeaconMac\":"+"\""+mac_address+"\","+"\"Rssi\":"+"\""+meanValue+"\"},";
+                                Log.d("num3",data);
+////                                result = service.sendPostDataToInternet(service.uriAPI_2,data);
 //                                if(result == null) {
 //                                    Log.d("ouo","Result is Null Pointer");
 //                                }else{
 //                                    Log.d("ouo",result);
 //                                    Log.d("test",data);
-//                                }
-////                                service.mHandler.obtainMessage(REFRESH_DATA, result).sendToTarget();
-//                                service.scanHandler.obtainMessage(REFRESH_DATA,result).sendToTarget();
-//                            }
+                            }
+                        }
+//                        if (data != null && data.length() > 0 && data.charAt(data.length() - 1) == ',') {
+//                            data = data.substring(0, data.length() - 1);
 //                        }
-//                        service.sendPostDataToInternet(service.uriAPI_2,mac + " @");
-//                        SCAN_LABEL++;
-//                        service.meanValueHashMap.clear();
-//                        try{
-//                            Thread.sleep(1000);
-//                            String compareResult = service.sendPostDataToInternet(service.uriAPI_2,mac);
-//                            service.sendResultToActivity(compareResult);
-//                        }catch (Exception e){
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                }
-//                service.scanList.clear();
-//            }
-//        }
-//    }
+                        data = data + "{\"PhoneMac\":"+"\""+mac+"\""+",\"BreakPoint\":\"End\"}";
+                        data = data + "]";
+                        Log.d("final num3",data);
+                        String compareResult= service.sendPostDataToInternet(service.uriAPI_2,data);
+                        Log.d("compareResult",compareResult);
+                        service.sendResultToActivity(compareResult);
+                        SCAN_LABEL++;
+                        service.meanValueHashMap.clear();
+                    }
+                }
+                service.scanList.clear();
+            }
+        }
+    }
 
-//    private SendingRunnable sendingRunnable = new SendingRunnable(this);
+    private SendingRunnable sendingRunnable = new SendingRunnable(this);
 
     private static class MyRunnable implements Runnable {
         private final WeakReference<BLE_ScanningService> serviceObject;
@@ -583,62 +582,15 @@ public class BLE_ScanningService extends Service {
 
 
     private void update(){
-//        long sendThreadID;
-//        long uiThreadID;
-//        Thread thread = new Thread(sendingRunnable,"Sending Thread");
-//        thread.start();
-//        sendThreadID = thread.getId();
-//        uiThreadID = Thread.currentThread().getId();
-//        Log.d("thread id","Sending thread ID = "+sendThreadID);
-//        Log.d("thread id","Main thread ID = " + uiThreadID);
+        long sendThreadID;
+        long uiThreadID;
+        Thread thread = new Thread(sendingRunnable,"Sending Thread");
+        thread.start();
+        sendThreadID = thread.getId();
+        uiThreadID = Thread.currentThread().getId();
+        Log.d("thread id","Sending thread ID = "+sendThreadID);
+        Log.d("thread id","Main thread ID = " + uiThreadID);
 //        return thread.getId();
-
-
-        String result;
-        String mac = simpleMacAddress.getMacAddress();
-        if(isLab){
-            for (String data:scanList) {
-                String num2= mac+" "+data;
-                Log.d("num2:",num2);
-                result = sendPostDataToInternet(uriAPI,num2);
-                if(result == null) {
-                    Log.d("ouo","Result is Null Pointer");
-                }else{
-                    Log.d("ouo",result);
-                }
-//                            service.mHandler.obtainMessage(REFRESH_DATA, result).sendToTarget();
-                scanHandler.obtainMessage(REFRESH_DATA,result).sendToTarget();
-            }
-        }
-        if(isCompare){
-            Log.d("num3:",String.format("%d",meanValueHashMap.size()));
-            for(String mac_address:meanValueHashMap.keySet()) {
-                RssiMeanValue rssiMeanValueObject = meanValueHashMap.get(mac_address);
-                if(rssiMeanValueObject != null){
-                    String meanValue = String.format("%.3f",rssiMeanValueObject.getMeanValueOfRssi());
-                    String data = mac + " " +  mac_address + " : " +  meanValue +" " +  SCAN_LABEL +"(Mean value)";
-                    result = sendPostDataToInternet(uriAPI_2,data);
-                    if(result == null) {
-                        Log.d("ouo","Result is Null Pointer");
-                    }else{
-                        Log.d("ouo",result);
-                        Log.d("test",data);
-                    }
-//                                service.mHandler.obtainMessage(REFRESH_DATA, result).sendToTarget();
-                }
-            }
-            sendPostDataToInternet(uriAPI_2,mac + " @");
-            SCAN_LABEL++;
-            meanValueHashMap.clear();
-            try{
-                Thread.sleep(1000);
-                String compareResult = sendPostDataToInternet(uriAPI_2,mac);
-                sendResultToActivity(compareResult);
-            }catch (Exception e){
-                e.printStackTrace();
-            }
-        }
-        scanList.clear();
     }
 
 
@@ -648,7 +600,7 @@ public class BLE_ScanningService extends Service {
         int state;
         HttpClient httpClient = new DefaultHttpClient();
         HttpPost httpRequest = new HttpPost(uri);
-        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        List<NameValuePair> params = new ArrayList<>();
         params.add(new BasicNameValuePair("data", strTxt));
 
         try {
@@ -669,91 +621,4 @@ public class BLE_ScanningService extends Service {
         }
         return null;
     }
-
-    //拿取MacAddress
-//    public static String getMacAddress(Context context) {
-//        String mac = "02:00:00:00:00:00";
-//        //判斷Android版本為6.0之前
-//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-//            mac = getMacDefault(context);
-//            Log.d("ouo",mac);
-//            //判斷Android版本為6.0~7.0之間
-//        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-//            mac = getMacAddress();
-//            Log.d("ouo",mac);
-//            //判斷Android版本為7.0以上
-//        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-//            mac = getMacFromHardware();
-//            Log.d("ouo",mac);
-//        }
-//        return mac;
-//    }
-//
-//    //Android6.0以下
-//    private static String getMacDefault(Context context) {
-//        String mac = "02:00:00:00:00:00";
-//        if (context == null) {
-//            return mac;
-//        }
-//
-//        WifiManager wifi = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-//        if (wifi == null) {
-//            return mac;
-//        }
-//        WifiInfo info = null;
-//        try {
-//            info = wifi.getConnectionInfo();
-//        } catch (Exception e) {
-//        }
-//        if (info == null) {
-//            return null;
-//        }
-//        mac = info.getMacAddress();
-//        if (!TextUtils.isEmpty(mac)) {
-//            mac = mac.toUpperCase(Locale.ENGLISH);
-//        }
-//        return mac;
-//    }
-//
-//    //Android 6.0~7.0
-//    private static String getMacAddress() {
-//        String WifiAddress = "02:00:00:00:00:00";
-//        try {
-//            WifiAddress = new BufferedReader(new FileReader(new File("/sys/class/net/wlan0/address"))).readLine();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        return WifiAddress;
-//    }
-//
-//    //Android 7.0以上
-//    private static String getMacFromHardware() {
-//        try {
-//            List<NetworkInterface> all = Collections.list(NetworkInterface.getNetworkInterfaces());
-//            for (NetworkInterface nif : all) {
-//                if (!nif.getName().equalsIgnoreCase("wlan0"))
-//                    continue;
-//
-//                byte[] macBytes = nif.getHardwareAddress();
-//                if (macBytes == null) {
-//                    return "";
-//                }
-//
-//                StringBuilder res1 = new StringBuilder();
-//                for (byte b : macBytes) {
-//                    res1.append(String.format("%02X:", b));
-//                }
-//
-//                if (res1.length() > 0) {
-//                    res1.deleteCharAt(res1.length() - 1);
-//                }
-//                return res1.toString();
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        return "02:00:00:00:00:00";
-//    }
-
-
 }

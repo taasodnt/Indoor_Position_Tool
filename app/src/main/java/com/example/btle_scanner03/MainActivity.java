@@ -287,6 +287,7 @@ public class MainActivity extends AppCompatActivity{
             for(Thread thread:excessThreads){
                 Log.d("Excess Threads",thread.getName());
             }
+            resultTV.setText("Result:");
         }
     }
 
