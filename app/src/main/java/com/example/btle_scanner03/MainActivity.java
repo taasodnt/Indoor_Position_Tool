@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity{
 
     private static final int REQUEST_CODE = 1;
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 2;
-//    private static final int MY_REQUEST_CODE = 3;
+    private static int UPDATED_COUNTER = 0;
     private static final String SERVICE_STATE = "SERVICE_STATE";
     public static final String SCAN_INTERVAL_ID = "SCAN_INTERVAL";
     public static final String SCAN_OPTION = "SCAN_OPTION";
@@ -98,18 +98,17 @@ public class MainActivity extends AppCompatActivity{
         }
         @Override
         public void run() {
+            String tmp;
             try{
-                final String tmp = activity.sendPostDataToInternet(activity.beaconListAPI,"");
+                do{
+                    tmp = activity.sendPostDataToInternet(activity.beaconListAPI,"");
+                }while(tmp == null);
                 activity.deviceAddresses = tmp.split(",");
                 Log.d("get beacon list","get beacon list success");
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if(tmp != null){
-                            activity.startAndStopBtn.setEnabled(true);
-                        }else{
-                            Toast.makeText(activity, "Service no response!", Toast.LENGTH_SHORT).show();
-                        }
+                        activity.startAndStopBtn.setEnabled(true);
                     }
                 });
             }catch (Exception e){
@@ -195,32 +194,7 @@ public class MainActivity extends AppCompatActivity{
 //        mHandler = initialHandler();
     }
 
-//    private Handler initialHandler() {
-//        Handler mHandler = new Handler(getApplicationContext().getMainLooper()) {
-//            @Override
-//            public void handleMessage(Message msg) {
-//                switch (msg.what){
-//                    // 顯示網路上抓取的資料
-//                    case BLE_ScanningService.REFRESH_DATA:
-//                        String result = null;
-//                        if (msg.obj instanceof String)
-//                            result = (String) msg.obj;
-//                        if(result!=null) {
-////                        Toast.makeText(BLE_ScanningService.this,"資料庫連接失敗\n請檢查您的連線狀態",Toast.LENGTH_SHORT).show();
-//                            Log.d("echo", "result != null");
-//                            Log.d("echo", result);
-////                        Toast.makeText(BLE_ScanningService.this, result, Toast.LENGTH_SHORT).show();
-//                            resultTV.setText(result);
-//                        }
-//                        break;
-//                    default:
-//                        break;
-//                }
-//            }
-//        };
-//        return mHandler;
-//    }
-
+    
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -353,7 +327,8 @@ public class MainActivity extends AppCompatActivity{
             if (action == BLE_ScanningService.SHOW_RESULT){
                 String result = intent.getStringExtra(BLE_ScanningService.COMPARE_RESULT);
                 Log.d("compare result",result);
-                mainActivity.resultTV.setText("Result: " + result);
+                mainActivity.resultTV.setText("Result: " + result + " " + UPDATED_COUNTER);
+                UPDATED_COUNTER++;
             }
         }
     }

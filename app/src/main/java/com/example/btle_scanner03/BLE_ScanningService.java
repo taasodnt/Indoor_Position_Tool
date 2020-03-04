@@ -170,8 +170,10 @@ public class BLE_ScanningService extends Service {
                         data = data + "]";
                         Log.d("final num3",data);
                         String compareResult= service.sendPostDataToInternet(service.uriAPI_2,data);
-                        Log.d("compareResult",compareResult);
-                        service.sendResultToActivity(compareResult);
+                        if(compareResult != null && compareResult != ""){
+                            Log.d("compareResult",compareResult);
+                            service.sendResultToActivity(compareResult);
+                        }
                         SCAN_LABEL++;
                         service.meanValueHashMap.clear();
                     }
