@@ -66,6 +66,7 @@ public class BLE_ScanningService extends Service {
     private String uriAPI = "http://163.18.53.144/F459/PHP/beacon/httpPostTest.php"; //所有訊號的資訊
     private String uriAPI_2 = "http://163.18.53.144/F459/PHP/beacon_result/PhonePJ_getJson.php"; //只有平均值
     private String uriAPI_3 = "http://163.18.53.144/F459/PHP/beacon_result/compare.php";
+    private String wifiWeb = "http://163.18.53.144/F459/PHP/WIFI/PhonePJ_GetWifi.php";
 //    private String[] DEVICE_ADDRESSES = {
 //            "20:91:48:21:79:2C",
 //            "20:91:48:21:7E:65",
@@ -299,13 +300,6 @@ public class BLE_ScanningService extends Service {
         }
     }
 
-//    private void sendBroadCastToActivity () {
-//        Intent broadCastIntent = new Intent();
-//        broadCastIntent.setAction(UPDATE_LIST_ACTION);
-//        broadCastIntent.putExtra(DEVICE_LIST,scanList);
-//        sendBroadcast(broadCastIntent);
-//    }
-
     private void sendResultToActivity(String result) {
         Log.d("broadcast test","sendResultToActicity get called");
 
@@ -374,73 +368,13 @@ public class BLE_ScanningService extends Service {
             synchronized (service.controlScanList){
                 service.scanResults.add(result);
             }
-//            int rssi = result.getRssi();
-//            String mac_address = result.getDevice().getAddress();
-//            String data = mac_address + " " + rssi + " " +service.chronometer.getElapsedTime();
-//
-//            synchronized (service.controlScanList) {
-//                service.scanList.add(data);
-//                if(service.meanValueHashMap.containsKey(mac_address)) {
-//                    RssiMeanValue rssiMeanValue = service.meanValueHashMap.get(mac_address);
-//                    if(rssiMeanValue != null){
-//                        rssiMeanValue.add(rssi);
-//                    }
-//                }else{
-//                    RssiMeanValue rssiMeanValueObject = new RssiMeanValue(mac_address,rssi);
-//                    service.meanValueHashMap.put(rssiMeanValueObject.getMac_address(),rssiMeanValueObject);
-//                }
-//                Log.d(TAG,"Added message" + data);
-//            }
         }
-
         @Override
         public void onScanFailed(int errorCode) {
             super.onScanFailed(errorCode);
             Log.d(TAG,"Scanning Failed Error Code:"+errorCode);
         }
     }
-
-//    private ScanCallback generateScanCallback() {
-//        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT) {
-//            ScanCallback scanCallback;
-//            scanCallback = new ScanCallback() {
-//                @Override
-//                public void onScanResult(int callbackType, android.bluetooth.le.ScanResult result) {
-//                    super.onScanResult(callbackType, result);
-////                    Calendar calendar = Calendar.getInstance();
-////                    SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
-////                    String data = result.getDevice().getAddress() + " " + result.getRssi()+ " " +dateFormat.format(calendar.getTime());
-//                    int rssi = result.getRssi();
-//                    String mac_address = result.getDevice().getAddress();
-//                    String data = mac_address + " " + rssi + " " +chronometer.getElapsedTime();
-//
-//                    synchronized (controlScanList) {
-//                        scanList.add(data);
-//                        if(meanValueHashMap.containsKey(mac_address)) {
-//                            RssiMeanValue rssiMeanValue = meanValueHashMap.get(mac_address);
-//                            if(rssiMeanValue != null){
-//                                rssiMeanValue.add(rssi);
-//                            }
-//                        }else{
-//                            RssiMeanValue rssiMeanValueObject = new RssiMeanValue(mac_address,rssi);
-//                            meanValueHashMap.put(rssiMeanValueObject.getMac_address(),rssiMeanValueObject);
-//                        }
-//                        Log.d(TAG,"Added message" + data);
-//                    }
-//                }
-//
-//                @Override
-//                public void onScanFailed(int errorCode) {
-//                    super.onScanFailed(errorCode);
-//                    Log.d(TAG,"Scanning Failed Error Code:"+errorCode);
-//                }
-//            };
-//            return scanCallback;
-//        }else{
-//            return null;
-//        }
-//    }
-
 
     @Override
     public void onCreate() {
@@ -612,7 +546,7 @@ public class BLE_ScanningService extends Service {
             Log.d("ouo","Error code:" +state);
             //狀態碼為200的狀況才會執行
             if (state == 200) {
-                Log.d("ouo",strTxt);
+                Log.d(BLE_ScanningService.class.getName(),strTxt);
                 String strResult = EntityUtils.toString(httpResponse.getEntity());
 
                 return strResult;
