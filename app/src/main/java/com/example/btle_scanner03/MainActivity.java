@@ -123,7 +123,7 @@ public class MainActivity extends AppCompatActivity{
         setContentView(R.layout.activity_main);
 
         scanIntervalET = findViewById(R.id.interval_et);
-        labCB = findViewById(R.id.lab_cb);
+        //labCB = findViewById(R.id.lab_cb);
         compareCB = findViewById(R.id.compare_cb);
         resultTV = findViewById(R.id.result_tv);
 
@@ -240,7 +240,7 @@ public class MainActivity extends AppCompatActivity{
 
     public void startAndStop(View view) {
         if(BLE_ScanningService.SERVICE_STATE_ON == false){
-            boolean[] options = {labCB.isChecked(),compareCB.isChecked()};
+            boolean[] options = {compareCB.isChecked()};
             BLE_ScanningService.SERVICE_STATE_ON = true;
             Log.d(TAG,"Button Ok1");
             long scanInterval = BLE_ScanningService.SCAN_PERIOD;

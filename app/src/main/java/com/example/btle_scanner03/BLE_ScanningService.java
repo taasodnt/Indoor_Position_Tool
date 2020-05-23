@@ -449,8 +449,8 @@ public class BLE_ScanningService extends Service {
             boolean[] tmpList = intent.getBooleanArrayExtra(MainActivity.SCAN_OPTION);
             if(tmpList != null){
                 for (int i = 0; i<tmpList.length;i++) {
-                    isLab = tmpList[0];
-                    isCompare = tmpList[1];
+                    //isLab = tmpList[0];
+                    isCompare = tmpList[0];
                 }
                 scanPeriod = intent.getLongExtra(MainActivity.SCAN_INTERVAL_ID,SCAN_PERIOD);
                 deviceaddress = intent.getStringArrayExtra(MainActivity.BEACON_LIST);
