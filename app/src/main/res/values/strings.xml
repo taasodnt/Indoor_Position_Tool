@@ -1,3 +1,6 @@
 <resources>
-    <string name="app_name">BTLE_Scanner03</string>
+    <string name="app_name">Location_App</string>
+    <string name="login_title">火災現場定位App\n註冊</string>
+    <string name="login">登入</string>
+    <string name="hint_text">請輸入編號</string>
 </resources>

@@ -1,91 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center|top"
     tools:context=".MainActivity">
 
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_horizontal"
-
-        >
-
-        <Button
-            android:id="@+id/startAndStop"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="startAndStop"
-            android:text="Start/Stop" />
-
-
-        <EditText
-            android:id="@+id/interval_et"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:ems="10"
-            android:hint="default: 10000(ms)"
-            android:inputType="textEmailAddress" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <CheckBox
-            android:id="@+id/compare_cb"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:checked="true"
-            android:text="compare" />
-    </LinearLayout>
-
-    <ListView
-        android:id="@+id/list_item"
-        android:layout_width="match_parent"
-        android:layout_height="162dp"></ListView>
-
-    <TextView
-        android:id="@+id/result_tv"
+    <ImageView
+        android:id="@+id/header_iv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="left"
-        android:padding="10dp"
-        android:text="Result:"
-        android:textSize="20dp"
-        tools:text="Result:" />
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="60dp"
+        />
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/name_tv"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:text="name: Nick"
+        android:textSize="30sp"
+        android:layout_below="@id/header_iv"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="40dp"
+    />
+    <TextView
+        android:id="@+id/id_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Number: 0651094"
+        android:textSize="30sp"
+        android:layout_below="@id/name_tv"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        />
 
-        <Button
-            android:id="@+id/yes_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="YES"
-            android:onClick="correct"
-            />
-
-        <Button
-            android:id="@+id/no_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="NO"
-            android:onClick="wrong"
-            />
-    </LinearLayout>
-
-</LinearLayout>
+    <Button
+        android:id="@+id/location_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="開始定位"
+        android:textSize="30sp"
+        android:layout_below="@+id/id_tv"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        />
+</RelativeLayout>
